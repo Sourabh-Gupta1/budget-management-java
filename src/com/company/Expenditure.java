@@ -1,0 +1,146 @@
+package com.company;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.Date;
+
+public class Expenditure extends JFrame {
+    JButton submit;
+    JLabel wIcon;
+    JTextField amt,type,comments;
+    public Expenditure(String st) {
+        super(st);
+        initComponents();
+    }
+
+    private void initComponents() {
+        submit = new JButton("SUBMIT");
+        getRootPane().setBorder(BorderFactory.createMatteBorder(8,8,8,8,Color.gray));
+        BufferedImage img = null;
+        try {
+            img = ImageIO.read(this.getClass().getResource("back.png"));
+
+        }
+        catch (IOException io) {
+
+        }
+        wIcon = new JLabel(new ImageIcon(img));
+        Container pane = getContentPane();
+        pane.setLayout(new BorderLayout(60,120));
+        JPanel panBtn = new JPanel(new BorderLayout(150,150));
+        panBtn.add(wIcon,BorderLayout.WEST);
+
+        JPanel paneFields = new JPanel();
+        paneFields.setLayout(new BoxLayout(paneFields,BoxLayout.PAGE_AXIS));
+
+        amt = new JTextField(3);
+        type = new JTextField(3);
+        comments = new JTextField(3);
+
+        paneFields.add(setFieldAndLabel(amt,"Amount       "));
+        paneFields.add(setFieldAndLabel(type,"Type            "));
+        paneFields.add(setFieldAndLabel(comments,"Comments   "));
+
+        pane.add(panBtn,BorderLayout.NORTH);
+        pane.add(paneFields,BorderLayout.CENTER);
+
+        JPanel paneSubmit = new JPanel();
+        paneSubmit.setLayout(new BorderLayout());
+        paneSubmit.add(submit,BorderLayout.AFTER_LINE_ENDS);
+        pane.add(paneSubmit,BorderLayout.SOUTH);
+        addListeners();
+    }
+
+    private JPanel setFieldAndLabel(JTextField txtField,String txt) {
+        JLabel lbl = new JLabel(txt,SwingConstants.LEFT);
+        lbl.setFont(new Font("Serif",Font.PLAIN,25));
+        lbl.setVerticalAlignment(SwingConstants.CENTER);
+
+        JPanel pane = new JPanel(new BorderLayout(20,3));
+        pane.add(lbl,BorderLayout.WEST);
+
+
+        pane.add(txtField,BorderLayout.CENTER);
+        return pane;
+    }
+
+    private void addListeners() {
+        wIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                setVisible(false);
+                Main.frame.setVisible(true);
+            }
+        });
+
+        submit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String amtStr = amt.getText();
+                String typeStr = type.getText();
+                String commentStr = comments.getText();
+                amt.setText("");
+                type.setText("");
+                comments.setText("");
+                Date date = new Date();
+                if(validateStringForInteger(amtStr) && validateSource(typeStr) &&  validateComment(commentStr)) {
+                    try {
+                        App.preparedStatementExpenditure.setString(1, date.toString());
+                        App.preparedStatementExpenditure.setInt(2,new Integer(amtStr));
+                        App.preparedStatementExpenditure.setString(3,typeStr);
+                        App.preparedStatementExpenditure.setString(4,commentStr);
+                        App.preparedStatementExpenditure.executeUpdate();
+                    }
+                    catch (Exception ex) {
+                        System.out.println("Insertion Error");
+                    }
+                }
+                else {
+                    JOptionPane optionPane = new JOptionPane("Some Fields Are Not Validated Properly!!",JOptionPane.ERROR_MESSAGE);
+                    JDialog dialog = optionPane.createDialog("Error");
+                    dialog.setAlwaysOnTop(true);
+                    dialog.setVisible(true);
+                }
+                setVisible(false);
+                Toolkit tk = Toolkit.getDefaultToolkit();
+                Dimension dim = tk.getScreenSize();
+                Main.frame = new App("Budget Management");
+                Main.frame.setSize(500,500);
+                int xPos = dim.width/2 - Main.frame.getWidth()/2;
+                int yPos = dim.height/2 - Main.frame.getHeight()/2;
+                Main.frame.setLocation(xPos,yPos);
+                Main.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                Main.frame.setVisible(true);
+            }
+
+        });
+    }
+
+    private boolean validateStringForInteger(String str) {
+        if(str.length() == 0) {
+            return false;
+        }
+
+        for(int i=0;i<str.length();i++) {
+            if(!(str.charAt(i) >= '0' && str.charAt(i) <= '9')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean validateSource(String str) {
+        return str.length() != 0;
+    }
+
+    private boolean validateComment(String str) {
+        return str.length() != 0;
+    }
+}
